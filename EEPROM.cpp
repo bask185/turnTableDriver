@@ -20,12 +20,11 @@ void clearSlots()
     Serial.println(F("All slots whiped"));
 }
 
-void storeSlot()
+void storeSlot( uint16_t position )
 {
     currentSlot ++ ;
     
     uint16_t eeAddress = currentSlot * 2 ;
-    uint16_t position = 0;//getPosition() ;
     EEPROM.put( eeAddress, position ) ;
     
     MAX_SLOTS = currentSlot ;
