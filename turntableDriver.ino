@@ -4,9 +4,14 @@
 #include "EEPROM.h"
 //#include "roundRobinTasks.h"
 
+uint32_t    timeLastStep ;
+uint32_t    position ;
+uint16_t    speedInterval ;
+uint8_t     mode ;
+
 Debounce CW(   cwPin ) ;
 Debounce CCW( ccwPin ) ;
-Debounce mode( modePin ) ;
+Debounce modeBtn( modePin ) ;
 Debounce record( recordPin ) ;
 
 void debounceButtons()
@@ -14,35 +19,41 @@ void debounceButtons()
     REPEAT_MS( 20 ) ;
     CW.debounceInputs() ;
     CCW.debounceInputs() ;
-    mode.debounceInputs() ;
+    modeBtn.debounceInputs() ;
     record.debounceInputs() ;
     END_REPEAT
 }
 
-bool motorIsMoving = false ;
+enum modes
+{
+    AUTOMATIC,
+    MANUAL,
+};
 
-#define MAX_REV = 20000 ;
+bool motorMoving = false ;
+
+const long MAX_REV = 20000 ;
 void setStep()
 {
     uint32_t currentTime = millis() ;
     
-    if( motorIsMoving == true )                             // if motor is moving..
+    if( motorMoving == true )                             // if motor is moving..
     {
         if(  currentTime - timeLastStep > speedInterval )   // ..wait for time to pass and move again
         {
             speedInterval = analogRead( speedPin ) ;
-            motorIsMoving = false ;
+            motorMoving = false ;
         }
         return ;
     }
     
-    motorIsMoving = true ;                                  // set flag that motor is moving
+    motorMoving = true ;                                  // set flag that motor is moving
     timeLastStep = currentTime ;
     
     digitalWrite( stepPin, HIGH );                          // take a step
     digitalWrite( stepPin,  LOW );
     
-    if( digitalRead( dirPin )                               // update position
+    if( digitalRead( dirPin ) )                             // update position
     {
         if( ++position == MAX_REV ) position = 0 ;
     }
@@ -93,7 +104,7 @@ void loop()
     
     if( motorMoving == false )
     {
-        uint8_t state = mode.readInput() ;
+        uint8_t state = modeBtn.readInput() ;
         if( state == HIGH ) mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
         if( state ==  LOW ) mode = MANUAL ;
     }
