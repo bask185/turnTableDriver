@@ -1,7 +1,7 @@
 
-#define dirPin 10
-#define stepPin 9
-#define enablePin 8
+#define dirPin 8
+#define stepPin 7
+#define enablePin 9
 #define speedPin A0
 #define cwPin 5
 #define ccwPin 4
