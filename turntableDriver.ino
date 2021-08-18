@@ -35,13 +35,13 @@ bool motorMoving = false ;
 const long MAX_REV = 20000 ;
 void setStep()
 {
-    uint32_t currentTime = millis() ;
+    uint32_t currentTime = micros() ;
     
     if( motorMoving == true )                             // if motor is moving..
     {
         if(  currentTime - timeLastStep > speedInterval )   // ..wait for time to pass and move again
         {
-            speedInterval = analogRead( speedPin ) ;
+            speedInterval = 500 + (100 * analogRead( speedPin )) ;
             motorMoving = false ;
         }
         return ;
@@ -59,7 +59,7 @@ void setStep()
     }
     else
     {
-        if( --position == 0 )       position = MAX_REV ;
+        if( --position == 0xffffffff )       position = MAX_REV - 1 ;
     }
     
     Serial.println( position ) ;
@@ -84,11 +84,13 @@ void update()           // updates stepper motor position during automatic mode
 
 void shiftCW()
 {
+    Serial.println(F("shifting CW"));
     digitalWrite( dirPin, HIGH ) ;
 }
 
 void shiftCCW()
 {
+    Serial.println(F("shifting CCW"));
     digitalWrite( dirPin, LOW ) ;
 }
 
@@ -101,13 +103,18 @@ void setup()
 void loop() 
 {
     debounceButtons() ;
+    // Serial.print( CW.readInput() ) ; Serial.print(' ');
+    // Serial.print( CCW.readInput() ) ; Serial.print(' ');
+    // Serial.print( modeBtn.readInput() ) ; Serial.print(' ');
+    // Serial.print( record.readInput() ) ; Serial.println(' ');
     
     if( motorMoving == false )
     {
         uint8_t state = modeBtn.readInput() ;
-        if( state == HIGH ) mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
-        if( state ==  LOW ) mode = MANUAL ;
+        if( state ==  LOW  ) mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
+        if( state ==  HIGH ) mode = MANUAL ;
     }
+    //mode = MANUAL ;
     
     uint8_t  cwState =  CW.readInput() ;
     uint8_t ccwState = CCW.readInput() ;

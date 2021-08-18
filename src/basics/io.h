@@ -1,12 +1,12 @@
 
-#define dirPin 2
-#define stepPin 3
-#define enablePin 4
+#define dirPin 10
+#define stepPin 9
+#define enablePin 8
 #define speedPin A0
 #define cwPin 5
-#define ccwPin 6
-#define modePin 7
-#define recordPin 8
-#define SensorPin 9
+#define ccwPin 4
+#define modePin 3
+#define recordPin 2
+#define SensorPin 6
 
 extern void initIO(void);
