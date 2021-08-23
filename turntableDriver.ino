@@ -6,8 +6,10 @@
 
 uint32_t    timeLastStep ;
 uint32_t    position ;
+uint32_t    setPoint ;
 uint16_t    speedInterval ;
 uint8_t     mode ;
+uint8_t     firstStore ;
 
 Debounce CW(   cwPin ) ;
 Debounce CCW( ccwPin ) ;
@@ -61,8 +63,6 @@ void setStep()
     {
         if( --position == 0xffffffff )       position = MAX_REV - 1 ;
     }
-    
-    Serial.println( position ) ;
 }
 
 
@@ -78,26 +78,35 @@ void inline cruiseCCW()
     setStep( ) ;
 }
 
+
 void update()           // updates stepper motor position during automatic mode
 {
+    if( setPoint != position )
+    {
+        setStep() ;
+    }
 }
 
 void shiftCW()
 {
     Serial.println(F("shifting CW"));
     digitalWrite( dirPin, HIGH ) ;
+    setPoint = getPosition( 1 ) ;
 }
 
 void shiftCCW()
 {
     Serial.println(F("shifting CCW"));
     digitalWrite( dirPin, LOW ) ;
+    setPoint = getPosition( -1 ) ;
 }
 
 void setup() 
 {
     initIO();
     Serial.begin(115200);
+    getSlotAmount() ;
+    dumpEEPROM() ;
 }
 
 void loop() 
@@ -108,16 +117,29 @@ void loop()
     // Serial.print( modeBtn.readInput() ) ; Serial.print(' ');
     // Serial.print( record.readInput() ) ; Serial.println(' ');
     
-    if( motorMoving == false )
-    {
+    //if( motorMoving == false )
+    //{
         uint8_t state = modeBtn.readInput() ;
-        if( state ==  LOW  ) mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
-        if( state ==  HIGH ) mode = MANUAL ;
-    }
+
+        if( state == RISING ) 
+        {
+            Serial.println("AUTOMATIC MODE") ;
+            mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
+            dumpEEPROM() ;
+        }
+        if( state == FALLING ) 
+        {
+            mode = MANUAL ;
+            firstStore = true ;
+            Serial.println("MANUAL MODE") ;
+        }
+    //}
     //mode = MANUAL ;
     
     uint8_t  cwState =  CW.readInput() ;
     uint8_t ccwState = CCW.readInput() ;
+    uint8_t recordState = record.readInput() ;
+    //uint8_t ccwState = CCW.readInput() ;
     if( mode == MANUAL )
     {    
         if( cwState == LOW )
@@ -128,6 +150,13 @@ void loop()
         else if( ccwState == LOW )
         {
             cruiseCCW() ;
+        }
+
+        else if( recordState == RISING )
+        {
+            if( firstStore ) clearSlots() ;
+            firstStore = false ;
+            storeSlot( position ) ;
         }
     }
     
@@ -144,4 +173,14 @@ void loop()
             shiftCCW() ;
         }
     }
+
+    REPEAT_MS( 50 );
+    static uint32_t prevPos ;
+
+    if( prevPos != position ) 
+    {
+        Serial.println( position ) ;
+        prevPos = position ;
+    }
+    END_REPEAT
 }

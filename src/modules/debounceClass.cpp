@@ -2,6 +2,7 @@
 Debounce::Debounce(unsigned char _pin) {
 	pinMode(_pin, INPUT_PULLUP); // take note I use a pull-up resistor by default
 	pin = _pin;
+	state = HIGH ;
 }
 
 unsigned char Debounce::readInput() {

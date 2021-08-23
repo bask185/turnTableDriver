@@ -8,11 +8,9 @@ uint16_t eeAddress = 0 ;
 
 void clearSlots()
 {
-    for( int i = 0 ; i < MAX_SLOTS ; i ++ ) // whipe all addresses
+    for( int i = 0 ; i < 512 ; i ++ ) // whipe all addresses
     {
-        uint16_t eeAddress = i * 2;
         EEPROM.write( i     , 0 ) ;
-        EEPROM.write( i + 1 , 0 ) ;
     }
     
     MAX_SLOTS = currentSlot = 0 ;
@@ -21,12 +19,11 @@ void clearSlots()
 }
 
 void storeSlot( uint16_t position )
-{
-    currentSlot ++ ;
-    
+{    
     uint16_t eeAddress = currentSlot * 2 ;
     EEPROM.put( eeAddress, position ) ;
     
+    currentSlot ++ ;
     MAX_SLOTS = currentSlot ;
     
     Serial.print(F("Slot added: ")) ;
@@ -40,13 +37,13 @@ uint16_t getPosition( int8_t dir )
 {  
     currentSlot += dir ; // adds either 1 or -1
     
-    if(      currentSlot == MAX_SLOTS ) currentSlot = 1 ;
-    else if( currentSlot == 0         ) currentSlot = MAX_SLOTS ;
+    if(      currentSlot == MAX_SLOTS + 1 ) currentSlot = 1 ;
+    else if( currentSlot == 0             ) currentSlot = MAX_SLOTS ;
 
     Serial.print(F("moving to slot: ")) ;
     Serial.println( currentSlot ) ;
     
-    uint16_t eeAddress = currentSlot * 2 ;
+    eeAddress = currentSlot * 2 - 2 ;
     uint16_t newPos ;
     EEPROM.get( eeAddress, newPos ) ;
     
@@ -54,4 +51,27 @@ uint16_t getPosition( int8_t dir )
     Serial.println( newPos ) ;
     
     return newPos ;
+}
+
+void dumpEEPROM()
+{
+    for( int i = 0 ; i < MAX_SLOTS ; i ++ )
+    {
+        uint16_t newPos ;
+        eeAddress = i * 2 ;
+        EEPROM.get( eeAddress, newPos ) ;
+        Serial.print(F("Stored: "));
+        Serial.println( newPos ) ;
+    }
+    EEPROM.write( 1000, MAX_SLOTS ) ; // store current slot
+    Serial.print(F("Slot amount: "));
+    Serial.println(MAX_SLOTS) ;
+}
+
+void getSlotAmount()
+{
+    Serial.println(F("loading eeprom")) ;
+    MAX_SLOTS = EEPROM.read( 1000 ) ;
+    Serial.print(F("slot amount =")) ;
+    Serial.println(MAX_SLOTS);
 }
