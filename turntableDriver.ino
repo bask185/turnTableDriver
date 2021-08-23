@@ -57,11 +57,11 @@ void setStep()
     
     if( digitalRead( dirPin ) )                             // update position
     {
-        if( ++position == MAX_REV ) position = 0 ;
+        if( ++position == MAX_REV )     position = 0 ;
     }
     else
     {
-        if( --position == 0xffffffff )       position = MAX_REV - 1 ;
+        if( --position == 0xffffffff ) position = MAX_REV - 1 ;
     }
 }
 
@@ -112,10 +112,6 @@ void setup()
 void loop() 
 {
     debounceButtons() ;
-    // Serial.print( CW.readInput() ) ; Serial.print(' ');
-    // Serial.print( CCW.readInput() ) ; Serial.print(' ');
-    // Serial.print( modeBtn.readInput() ) ; Serial.print(' ');
-    // Serial.print( record.readInput() ) ; Serial.println(' ');
     
     //if( motorMoving == false )
     //{
