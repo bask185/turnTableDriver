@@ -7,7 +7,7 @@
 uint32_t    timeLastStep ;
 uint32_t    position ;
 uint32_t    setPoint ;
-uint16_t    speedInterval ;
+uint16_t    currentSpeed ;
 uint8_t     mode ;
 uint8_t     firstStore ;
 
@@ -41,9 +41,11 @@ void setStep()
     
     if( motorMoving == true )                             // if motor is moving..
     {
-        if(  currentTime - timeLastStep > speedInterval )   // ..wait for time to pass and move again
+        if(  currentTime - timeLastStep > currentSpeed )   // ..wait for time to pass and move again
         {
-            speedInterval = 500 + (100 * analogRead( speedPin )) ;
+            // if( mode == MANUAL ) // calculate next step differently in manual than in auto
+            currentSpeed = 500 + (100 * analogRead( speedPin )) ;
+            // else 
             motorMoving = false ;
         }
         return ;
