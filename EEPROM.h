@@ -7,3 +7,5 @@ extern void dumpEEPROM() ;
 extern void getSlotAmount() ;
 extern void storeCurrentSlot() ;
 extern void loadCurrentSlot() ;
+extern uint16_t getCircumReference() ;
+extern void setCircumreference( uint16_t circumReference  ) ;

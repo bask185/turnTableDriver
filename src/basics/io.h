@@ -7,6 +7,6 @@
 #define ccwPin 4
 #define modePin 2
 #define recordPin 3
-#define SensorPin 6
+#define homeSensorPin 6
 
 extern void initIO(void);

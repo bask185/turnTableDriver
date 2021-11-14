@@ -8,8 +8,10 @@ uint32_t    timeLastStep ;
 uint32_t    position ;
 uint32_t    setPoint ;
 uint16_t    currentSpeed ;
+uint16_t    circumReference ;
 uint16_t    setSpeed ;
 uint8_t     mode ;
+uint8_t     state ;
 uint8_t     firstStore ;
 
 Debounce CW(   cwPin ) ;
@@ -34,8 +36,25 @@ enum modes
     MANUAL,
 };
 
+enum homingCycleStates
+{
+    findSensor,
+    leaveSensor,
+    measureRound,
+    turnToHome,
+} ;
+
 bool accelerating = false ;
 bool motorMoving = false ;
+
+void takeStep()     // only for homing cycle, fixed speed
+{
+    REPEAT_MS( 1 ) ;
+    digitalWrite( stepPin, HIGH ) ;                          // take a step
+    digitalWrite( stepPin,  LOW ) ;
+    END_REPEAT
+}
+
 
 const long MAX_REV = 3200 ;
 void setStep()
@@ -153,11 +172,75 @@ void shiftCCW()
     setPoint = getPosition( -1 ) ;
 }
 
+uint8_t homingCycle()
+{
+    switch( state )
+    {
+// MEASURE ROUND
+    case findSensor:
+        if( !digitalRead( homeSensorPin ))
+        {
+            takeStep();                     // if sensor is false, keep moving
+        }
+        else
+        {
+            // start recording
+            state = leaveSensor ;           // sensor found, go to leave sensor
+        }
+        return 0 ;
+
+    case leaveSensor:
+        if( digitalRead( homeSensorPin ))
+        {
+            takeStep();                     // as long as sensor is made, keep turning
+        }
+        else
+        {
+            state = measureRound ;
+        }
+        return 0 ;
+
+
+    case measureRound:
+        if( !digitalRead( homeSensorPin ))
+        {
+            takeStep();                     // if sensor is false, keep moving
+        }
+        else
+        {
+            // stop recording
+            return 1 ;                      // signal state machine is ready
+        }
+        return 0 ;
+
+// ONLY HOMING
+    case turnToHome:
+        if( !digitalRead( homeSensorPin ))
+        {
+            takeStep() ;                     // if sensor is false, keep moving to home position
+        }
+        else
+        {
+            return 1 ;                      // signal state machine is ready
+        }
+        return 0 ;
+    }
+}
+
 void setup() 
 {
     initIO();
     Serial.begin(115200);
-    home() ;
+
+    circumReference = getCircumReference() ;
+    position = 0 ;    
+
+    if( circumReference == 0xFFFF ) state = findSensor ;    // if not yet measured, measure circumreference
+    else                            state = turnToHome ;    // otherwise, just turn to home
+    while( homingCycle() == 0 ) {;}
+
+    position = 0 ;
+
     getSlotAmount() ;
     loadCurrentSlot() ;
     dumpEEPROM() ;
@@ -174,9 +257,6 @@ void setup()
     } else {
         mode = MANUAL ;
     }
-
-    calibration() ;
-    homing() ; 
 }
 
 void loop() 

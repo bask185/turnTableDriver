@@ -6,6 +6,7 @@ int8_t currentSlot ;
 uint8_t MAX_SLOTS = 0 ;
 uint16_t eeAddress = 0 ;
 
+const int CIRCUM_REF_ADDRESS = 1010 ;
 const int MAX_SLOT_ADDRESS = 1000 ;
 const int CURRENT_SLOT_ADDRESS = 1001 ;
 
@@ -94,4 +95,18 @@ void loadCurrentSlot( )
     currentSlot = EEPROM.read( CURRENT_SLOT_ADDRESS ) ;
     Serial.print(F("current slot = ")) ;
     Serial.println( currentSlot ) ;
+}
+
+uint16_t getCircumReference()
+{
+    uint16_t retVal ;
+
+    EEPROM.get( CIRCUM_REF_ADDRESS, retVal ) ;
+
+    return retVal ;
+}
+
+void setCircumreference( uint16_t circumReference  )
+{
+    EEPROM.put( CIRCUM_REF_ADDRESS, circumReference ) ;
 }

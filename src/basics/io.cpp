@@ -9,5 +9,5 @@ extern void initIO(void) {
 	pinMode(ccwPin, INPUT_PULLUP);
 	pinMode(modePin, INPUT_PULLUP);
 	pinMode(recordPin, INPUT_PULLUP);
-	pinMode(SensorPin, INPUT_PULLUP);
+	pinMode(homeSensorPin, INPUT_PULLUP);
 }

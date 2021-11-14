@@ -1,9 +1,10 @@
 #!/bin/bash
-python.exe updateTimers.py
-python.exe updateIO.py
 echo "COMPILING"
-arduino-cli compile -b arduino:avr:nano ~/Documents/software/turntableDriver
+arduino-cli compile -p "COM4" -b arduino:avr:nano ~/Documents/software/ledDriver
+echo "COMPILING DONE"
+
 echo "UPLOADING"
-arduino-cli upload -b arduino:avr:nano:cpu=atmega328old -p COM3 -i ~/Documents/software/turntableDriver/turntableDriver.arduino.avr.nano.hex
+arduino-cli upload -b arduino:avr:nano:cpu=atmega328old -p COM3 -i ~/Documents/software/ledDriver/ledDriver.arduino.avr.nano.hex
+echo "UPLOADING COMPLETE"
 rm *.hex *.elf
 exit
