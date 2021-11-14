@@ -157,6 +157,7 @@ void setup()
 {
     initIO();
     Serial.begin(115200);
+    home() ;
     getSlotAmount() ;
     loadCurrentSlot() ;
     dumpEEPROM() ;
