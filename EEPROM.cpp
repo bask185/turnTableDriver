@@ -1,9 +1,13 @@
+
 #include "EEPROM.h"
 #include <EEPROM.h>
 
 int8_t currentSlot ;
 uint8_t MAX_SLOTS = 0 ;
 uint16_t eeAddress = 0 ;
+
+const int MAX_SLOT_ADDRESS = 1000 ;
+const int CURRENT_SLOT_ADDRESS = 1001 ;
 
 
 void clearSlots()
@@ -31,6 +35,8 @@ void storeSlot( uint16_t position )
     
     Serial.print(F("Position stored: ")) ;
     Serial.println( position ) ;
+
+    storeCurrentSlot( ) ;
 }
 
 uint16_t getPosition( int8_t dir )
@@ -42,6 +48,8 @@ uint16_t getPosition( int8_t dir )
 
     Serial.print(F("moving to slot: ")) ;
     Serial.println( currentSlot ) ;
+
+    storeCurrentSlot() ;
     
     eeAddress = currentSlot * 2 - 2 ;
     uint16_t newPos ;
@@ -63,7 +71,7 @@ void dumpEEPROM()
         Serial.print(F("Stored: "));
         Serial.println( newPos ) ;
     }
-    EEPROM.write( 1000, MAX_SLOTS ) ; // store current slot
+    EEPROM.write( MAX_SLOT_ADDRESS, MAX_SLOTS ) ; // store current slot
     Serial.print(F("Slot amount: "));
     Serial.println(MAX_SLOTS) ;
 }
@@ -71,7 +79,19 @@ void dumpEEPROM()
 void getSlotAmount()
 {
     Serial.println(F("loading eeprom")) ;
-    MAX_SLOTS = EEPROM.read( 1000 ) ;
+    MAX_SLOTS = EEPROM.read( MAX_SLOT_ADDRESS ) ;
     Serial.print(F("slot amount =")) ;
     Serial.println(MAX_SLOTS);
+}
+
+void storeCurrentSlot( )
+{
+    EEPROM.write( CURRENT_SLOT_ADDRESS, currentSlot ) ;
+}
+
+void loadCurrentSlot( )
+{
+    currentSlot = EEPROM.read( CURRENT_SLOT_ADDRESS ) ;
+    Serial.print(F("current slot = ")) ;
+    Serial.println( currentSlot ) ;
 }

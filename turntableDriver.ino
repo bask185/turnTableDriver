@@ -8,6 +8,7 @@ uint32_t    timeLastStep ;
 uint32_t    position ;
 uint32_t    setPoint ;
 uint16_t    currentSpeed ;
+uint16_t    setSpeed ;
 uint8_t     mode ;
 uint8_t     firstStore ;
 
@@ -16,9 +17,10 @@ Debounce CCW( ccwPin ) ;
 Debounce modeBtn( modePin ) ;
 Debounce record( recordPin ) ;
 
+
 void debounceButtons()
 {
-    REPEAT_MS( 20 ) ;
+    REPEAT_US( 500 ) ;
     CW.debounceInputs() ;
     CCW.debounceInputs() ;
     modeBtn.debounceInputs() ;
@@ -32,19 +34,35 @@ enum modes
     MANUAL,
 };
 
+bool accelerating = false ;
 bool motorMoving = false ;
 
-const long MAX_REV = 20000 ;
+const long MAX_REV = 3200 ;
 void setStep()
 {
+    static uint16_t speedTemp = 0 ;
     uint32_t currentTime = micros() ;
+
+    uint16_t accelFactor ;
+    if( accelerating == true ) accelFactor = 1000 ; // inc 750
+    else                       accelFactor = 333 ;
+
+    REPEAT_US( accelFactor ); // ACCEL FACTOR
+
+    if( speedTemp < setSpeed ) speedTemp ++ ;
+    if( speedTemp > setSpeed ) speedTemp -- ;
+    END_REPEAT
     
     if( motorMoving == true )                             // if motor is moving..
     {
         if(  currentTime - timeLastStep > currentSpeed )   // ..wait for time to pass and move again
         {
-            // if( mode == MANUAL ) // calculate next step differently in manual than in auto
-            currentSpeed = 500 + (100 * analogRead( speedPin )) ;
+            if( mode == MANUAL  )
+            {
+                currentSpeed = 15000 - speedTemp ;
+
+            }
+            else currentSpeed = getSpeed() ;
             // else 
             motorMoving = false ;
         }
@@ -54,6 +72,7 @@ void setStep()
     motorMoving = true ;                                  // set flag that motor is moving
     timeLastStep = currentTime ;
     
+    if( speedTemp == 0 ) return ;
     digitalWrite( stepPin, HIGH );                          // take a step
     digitalWrite( stepPin,  LOW );
     
@@ -67,18 +86,49 @@ void setStep()
     }
 }
 
+/* MANUAL MODE = CRUISING */
 
-void inline cruiseCW()
+void cruise()
 {
+    if( mode != MANUAL ) return ;
+
+    setStep() ;
+}
+
+void stopCruising()
+{
+    setSpeed = 0 ;
+    accelerating = false ;
+    Serial.println(F("STOPPING"));     
+}
+
+uint32_t getSpeed()
+{
+    return 2500 + 1024 * 3  + (3 * analogRead( speedPin )) ; ; //max 9750 min 6570
+}
+
+void cruiseCW()
+{
+    Serial.println(F("cruising CW"));        
     digitalWrite( dirPin, HIGH ) ;
-    setStep( ) ;
+    accelerating = true;
+    // accelerateCW  = true ;
+    // accelerateCCW = false ;
+    setSpeed = getSpeed() ;
 }
 
-void inline cruiseCCW()
+void cruiseCCW()
 {
+    Serial.println(F("cruising CCW"));       
     digitalWrite( dirPin, LOW ) ;
-    setStep( ) ;
+    accelerating = true;
+    // accelerateCW  = true ;
+    // accelerateCCW = false ;
+    setSpeed = getSpeed() ;
 }
+
+/* END CRUISING */
+
 
 
 void update()           // updates stepper motor position during automatic mode
@@ -108,47 +158,56 @@ void setup()
     initIO();
     Serial.begin(115200);
     getSlotAmount() ;
+    loadCurrentSlot() ;
     dumpEEPROM() ;
+
+    CW.readInput() ;
+    CCW.readInput() ;
+    modeBtn.readInput() ;
+    record.readInput() ;
+    delay(20);
+
+    if( digitalRead( modePin )) {
+        //mode = AUTOMATIC ;
+        mode = MANUAL ;
+    } else {
+        mode = MANUAL ;
+    }
+
+    calibration() ;
+    homing() ; 
 }
 
 void loop() 
 {
     debounceButtons() ;
-    
-    //if( motorMoving == false )
-    //{
-        uint8_t state = modeBtn.readInput() ;
+    cruise() ;
 
-        if( state == RISING ) 
-        {
-            Serial.println("AUTOMATIC MODE") ;
-            mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
-            dumpEEPROM() ;
-        }
-        if( state == FALLING ) 
-        {
-            mode = MANUAL ;
-            firstStore = true ;
-            Serial.println("MANUAL MODE") ;
-        }
-    //}
-    //mode = MANUAL ;
+    uint8_t state = modeBtn.readInput() ;
     
+    if( state == RISING ) 
+    {
+        Serial.println("AUTOMATIC MODE") ;
+        //mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
+        dumpEEPROM() ;
+    }
+    if( state == FALLING ) 
+    {
+        mode = MANUAL ;
+        firstStore = true ;
+        Serial.println("MANUAL MODE") ;
+    }
+
     uint8_t  cwState =  CW.readInput() ;
     uint8_t ccwState = CCW.readInput() ;
     uint8_t recordState = record.readInput() ;
-    //uint8_t ccwState = CCW.readInput() ;
+
+
     if( mode == MANUAL )
     {    
-        if( cwState == LOW )
-        {
-            cruiseCW() ;
-        }
-        
-        else if( ccwState == LOW )
-        {
-            cruiseCCW() ;
-        }
+        if( cwState  == FALLING ) cruiseCW() ;
+        if( ccwState == FALLING ) cruiseCCW() ;
+        if( cwState == RISING || ccwState == RISING ) stopCruising() ;
 
         else if( recordState == RISING )
         {
@@ -177,7 +236,8 @@ void loop()
 
     if( prevPos != position ) 
     {
-        Serial.println( position ) ;
+        Serial.print( position ) ; Serial.print("  ");
+        Serial.println( currentSpeed ) ;
         prevPos = position ;
     }
     END_REPEAT
