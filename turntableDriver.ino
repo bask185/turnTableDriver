@@ -14,6 +14,7 @@ uint8_t     mode ;
 uint8_t     state ;
 uint8_t     firstStore ;
 
+
 Debounce CW(   cwPin ) ;
 Debounce CCW( ccwPin ) ;
 Debounce modeBtn( modePin ) ;
@@ -49,14 +50,16 @@ bool motorMoving = false ;
 
 void takeStep()     // only for homing cycle, fixed speed
 {
+    
     REPEAT_MS( 1 ) ;
     digitalWrite( stepPin, HIGH ) ;                          // take a step
     digitalWrite( stepPin,  LOW ) ;
+    position ++ ;
+    Serial.println( position ) ;
     END_REPEAT
 }
 
 
-const long MAX_REV = 3200 ;
 void setStep()
 {
     static uint16_t speedTemp = 0 ;
@@ -97,11 +100,11 @@ void setStep()
     
     if( digitalRead( dirPin ) )                             // update position
     {
-        if( ++position == MAX_REV )     position = 0 ;
+        if( ++position == circumReference ) position = 0 ;
     }
     else
     {
-        if( --position == 0xffffffff ) position = MAX_REV - 1 ;
+        if( --position == 0xffffffff ) position = circumReference - 1 ;
     }
 }
 
@@ -178,49 +181,58 @@ uint8_t homingCycle()
     {
 // MEASURE ROUND
     case findSensor:
-        if( !digitalRead( homeSensorPin ))
+        if( digitalRead( homeSensorPin ))      // if input is high, sensor is not made
         {
-            takeStep();                     // if sensor is false, keep moving
+            takeStep();
         }
         else
         {
             // start recording
+            position = 0 ;
+            Serial.println(F("sensor found")) ;
             state = leaveSensor ;           // sensor found, go to leave sensor
+            delay( 3 ) ;                    // just for debouncing
         }
         return 0 ;
 
     case leaveSensor:
-        if( digitalRead( homeSensorPin ))
+        if( !digitalRead( homeSensorPin ))
         {
             takeStep();                     // as long as sensor is made, keep turning
         }
         else
         {
+            Serial.println(F("measuring")) ;
             state = measureRound ;
+            delay( 3 ) ; 
         }
         return 0 ;
 
 
     case measureRound:
-        if( !digitalRead( homeSensorPin ))
+        if( digitalRead( homeSensorPin ))
         {
             takeStep();                     // if sensor is false, keep moving
         }
         else
         {
-            // stop recording
+            setCircumreference( position ) ;
+            position = 0 ;
+            Serial.println(F("measure round finished")) ;
             return 1 ;                      // signal state machine is ready
         }
         return 0 ;
 
 // ONLY HOMING
     case turnToHome:
-        if( !digitalRead( homeSensorPin ))
+        if( digitalRead( homeSensorPin ))
         {
             takeStep() ;                     // if sensor is false, keep moving to home position
         }
         else
         {
+            position = 0 ;
+            Serial.println(F("homed")) ;
             return 1 ;                      // signal state machine is ready
         }
         return 0 ;
@@ -230,19 +242,44 @@ uint8_t homingCycle()
 void setup() 
 {
     initIO();
+    digitalWrite( enablePin, LOW ) ;
+    digitalWrite( dirPin, LOW ) ;
+
+    for( int = 0 ; i < 10000 ; i ++ )
+    {
+        digitalWrite( stepPin, HIGH ) ;                          // take a step
+        delay(1);
+        digitalWrite( stepPin,  LOW ) ;
+        delay(1);
+    }
+    digitalWrite( enablePin, HIGH ) ;
+    digitalWrite( dirPin, HIGH ) ;
+
+    for( int = 0 ; i < 1000 ; i ++ )
+    {
+        digitalWrite( stepPin, HIGH ) ;                          // take a step
+        delay(1);
+        digitalWrite( stepPin,  LOW ) ;
+        delay(1);
+    }
+    
     Serial.begin(115200);
+    Serial.println(F("turntable software booted")) ;
 
     circumReference = getCircumReference() ;
     position = 0 ;    
 
-    if( circumReference == 0xFFFF ) state = findSensor ;    // if not yet measured, measure circumreference
-    else                            state = turnToHome ;    // otherwise, just turn to home
-    while( homingCycle() == 0 ) {;}
+    if( circumReference == 0xFFFF ) { state = findSensor ; }    // if not yet measured, measure circumreference
+    else                            { state = turnToHome ; }    // otherwise, just turn to home
+    Serial.print(F("circumReference ")) ;
+    Serial.println( circumReference ) ;
+     
+    while( homingCycle() == 0 ) { ; }
 
     position = 0 ;
 
     getSlotAmount() ;
-    loadCurrentSlot() ;
+    // loadCurrentSlot() ; OBSOLETE DUE TO HOMING CYCLE
     dumpEEPROM() ;
 
     CW.readInput() ;
@@ -252,8 +289,8 @@ void setup()
     delay(20);
 
     if( digitalRead( modePin )) {
-        //mode = AUTOMATIC ;
-        mode = MANUAL ;
+        mode = AUTOMATIC ;
+        // mode = MANUAL ;
     } else {
         mode = MANUAL ;
     }
@@ -283,6 +320,12 @@ void loop()
     uint8_t ccwState = CCW.readInput() ;
     uint8_t recordState = record.readInput() ;
 
+    if( ccwState == LOW && cwState == LOW ) 
+    {
+        setCircumreference( 0xFFFF ) ;
+        Serial.println(F("setCircumreference wiped, reboot")) ;
+        while( 1 ) ;
+    }
 
     if( mode == MANUAL )
     {    

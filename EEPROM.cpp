@@ -109,4 +109,5 @@ uint16_t getCircumReference()
 void setCircumreference( uint16_t circumReference  )
 {
     EEPROM.put( CIRCUM_REF_ADDRESS, circumReference ) ;
+    Serial.print(F("circumReference stored: ")) ; Serial.print( circumReference );
 }
