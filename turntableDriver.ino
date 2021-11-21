@@ -245,23 +245,23 @@ void setup()
     digitalWrite( enablePin, LOW ) ;
     digitalWrite( dirPin, LOW ) ;
 
-    for( int = 0 ; i < 10000 ; i ++ )
-    {
-        digitalWrite( stepPin, HIGH ) ;                          // take a step
-        delay(1);
-        digitalWrite( stepPin,  LOW ) ;
-        delay(1);
-    }
-    digitalWrite( enablePin, HIGH ) ;
-    digitalWrite( dirPin, HIGH ) ;
+    // for( int i  = 0 ; i < 10000 ; i ++ )
+    // {
+    //     digitalWrite( stepPin, HIGH ) ;                          // take a step
+    //     delay(1);
+    //     digitalWrite( stepPin,  LOW ) ;
+    //     delay(1);
+    // }
+    // digitalWrite( enablePin, HIGH ) ;
+    // digitalWrite( dirPin, HIGH ) ;
 
-    for( int = 0 ; i < 1000 ; i ++ )
-    {
-        digitalWrite( stepPin, HIGH ) ;                          // take a step
-        delay(1);
-        digitalWrite( stepPin,  LOW ) ;
-        delay(1);
-    }
+    // for( int i = 0 ; i < 10000 ; i ++ )
+    // {
+    //     digitalWrite( stepPin, HIGH ) ;                          // take a step
+    //     delay(1);
+    //     digitalWrite( stepPin,  LOW ) ;
+    //     delay(1);
+    // }
     
     Serial.begin(115200);
     Serial.println(F("turntable software booted")) ;
@@ -288,12 +288,11 @@ void setup()
     record.readInput() ;
     delay(20);
 
-    if( digitalRead( modePin )) {
-        mode = AUTOMATIC ;
-        // mode = MANUAL ;
-    } else {
-        mode = MANUAL ;
-    }
+    
+    mode = AUTOMATIC ;
+    
+    digitalWrite( dirPin, HIGH ) ;
+    setPoint = getPosition( 0 ) ; // turn to the first slot
 }
 
 void loop() 
@@ -306,8 +305,8 @@ void loop()
     if( state == RISING ) 
     {
         Serial.println("AUTOMATIC MODE") ;
-        //mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
-        dumpEEPROM() ;
+        mode = AUTOMATIC ; // new mode can only be adopted when motor is not moving
+        //dumpEEPROM() ;
     }
     if( state == FALLING ) 
     {
