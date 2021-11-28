@@ -4,7 +4,7 @@ echo "COMPILING"
 echo "COMPILING DONE"
 
 echo "UPLOADING"
-arduino-cli upload -b arduino:avr:nano -p COM3 -i ~/Documents/software/turnTableDriver/build/arduino.avr.nano/turnTableDriver.ino.hex
+arduino-cli upload -b arduino:avr:nano:cpu=atmega328old -p COM4 -i ~/Documents/software/turnTableDriver/build/arduino.avr.nano/turnTableDriver.ino.hex
 echo "UPLOADING COMPLETE"
 exit
 

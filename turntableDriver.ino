@@ -51,7 +51,7 @@ bool motorMoving = false ;
 void takeStep()     // only for homing cycle, fixed speed
 {
     
-    REPEAT_MS( 1 ) ;
+    REPEAT_MS( 4 ) ;
     digitalWrite( stepPin, HIGH ) ;                          // take a step
     digitalWrite( stepPin,  LOW ) ;
     position ++ ;
@@ -60,41 +60,44 @@ void takeStep()     // only for homing cycle, fixed speed
 }
 
 
+
 void setStep()
 {
     static uint16_t speedTemp = 0 ;
     uint32_t currentTime = micros() ;
 
-    uint16_t accelFactor ;
-    if( accelerating == true ) accelFactor = 1000 ; // inc 750
-    else                       accelFactor = 333 ;
-
-    REPEAT_US( accelFactor ); // ACCEL FACTOR
-
-    if( speedTemp < setSpeed ) speedTemp ++ ;
-    if( speedTemp > setSpeed ) speedTemp -- ;
-    END_REPEAT
-    
-    if( motorMoving == true )                             // if motor is moving..
+    if( mode == MANUAL )
     {
-        if(  currentTime - timeLastStep > currentSpeed )   // ..wait for time to pass and move again
-        {
-            if( mode == MANUAL  )
-            {
-                currentSpeed = 15000 - speedTemp ;
+        uint16_t accelFactor ;
+        if( accelerating == true ) accelFactor = 1000 ; // inc 750
+        else                       accelFactor = 333 ;
 
+        REPEAT_US( accelFactor ); // ACCEL FACTOR
+        if( speedTemp < setSpeed ) speedTemp ++ ;
+        if( speedTemp > setSpeed ) speedTemp -- ;
+        END_REPEAT
+        
+        if( motorMoving == true )                             // if motor is moving..
+        {
+            if(  currentTime - timeLastStep > currentSpeed )   // ..wait for time to pass and move again
+            {
+                if( mode == MANUAL  )
+                {
+                    currentSpeed = 15000 - speedTemp ;
+
+                }
+                else currentSpeed = getSpeed() ;
+                // else 
+                motorMoving = false ;
             }
-            else currentSpeed = getSpeed() ;
-            // else 
-            motorMoving = false ;
+            return ;
         }
-        return ;
     }
-    
+
     motorMoving = true ;                                  // set flag that motor is moving
     timeLastStep = currentTime ;
     
-    if( speedTemp == 0 ) return ;
+    if( speedTemp == 0 && mode == MANUAL ) return ;
     digitalWrite( stepPin, HIGH );                          // take a step
     digitalWrite( stepPin,  LOW );
     
@@ -106,6 +109,7 @@ void setStep()
     {
         if( --position == 0xffffffff ) position = circumReference - 1 ;
     }
+    //END_REPEAT
 }
 
 /* MANUAL MODE = CRUISING */
@@ -126,7 +130,7 @@ void stopCruising()
 
 uint32_t getSpeed()
 {
-    return 2500 + 1024 * 3  + (3 * analogRead( speedPin )) ; ; //max 9750 min 6570
+    return 10000 + (40 * analogRead( speedPin )) ; ; //max 9750 min 6570
 }
 
 void cruiseCW()
@@ -354,7 +358,7 @@ void loop()
         }
     }
 
-    REPEAT_MS( 50 );
+    REPEAT_MS( 500 );
     static uint32_t prevPos ;
 
     if( prevPos != position ) 
