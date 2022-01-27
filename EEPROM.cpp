@@ -28,7 +28,6 @@ void storeSlot( uint16_t position )
     uint16_t eeAddress = currentSlot * 2 ;
     EEPROM.put( eeAddress, position ) ;
     
-    currentSlot ++ ;
     MAX_SLOTS = currentSlot ;
     
     Serial.print(F("Slot added: ")) ;
@@ -37,22 +36,24 @@ void storeSlot( uint16_t position )
     Serial.print(F("Position stored: ")) ;
     Serial.println( position ) ;
 
-    storeCurrentSlot( ) ;
+    //storeCurrentSlot( ) ; OBSOLETE
+
+    currentSlot ++ ;
 }
 
 uint16_t getPosition( int8_t dir )
 {  
     currentSlot += dir ; // adds either 1 or -1
     
-    if(      currentSlot == MAX_SLOTS + 1 ) currentSlot = 1 ;
-    else if( currentSlot == 0             ) currentSlot = MAX_SLOTS ;
+    if(      currentSlot  > MAX_SLOTS ) currentSlot = 0 ;
+    else if( currentSlot == -1        ) currentSlot = MAX_SLOTS ;
 
     Serial.print(F("moving to slot: ")) ;
     Serial.println( currentSlot ) ;
 
-    storeCurrentSlot() ;
+    //storeCurrentSlot() ; // OBSOLETE
     
-    eeAddress = currentSlot * 2 - 2 ;
+    eeAddress = currentSlot * 2 ;
     uint16_t newPos ;
     EEPROM.get( eeAddress, newPos ) ;
     
@@ -64,7 +65,7 @@ uint16_t getPosition( int8_t dir )
 
 void dumpEEPROM()
 {
-    for( int i = 0 ; i < MAX_SLOTS ; i ++ )
+    for( int i = 0 ; i <= MAX_SLOTS ; i ++ )
     {
         uint16_t newPos ;
         eeAddress = i * 2 ;
@@ -74,15 +75,14 @@ void dumpEEPROM()
     }
     EEPROM.write( MAX_SLOT_ADDRESS, MAX_SLOTS ) ; // store current slot
     Serial.print(F("Slot amount: "));
-    Serial.println(MAX_SLOTS) ;
+    Serial.println(MAX_SLOTS + 1) ;
 }
 
 void getSlotAmount()
 {
     Serial.println(F("loading eeprom")) ;
     MAX_SLOTS = EEPROM.read( MAX_SLOT_ADDRESS ) ;
-    Serial.print(F("slot amount =")) ;
-    Serial.println(MAX_SLOTS);
+    Serial.println(MAX_SLOTS + 1);
 }
 
 void storeCurrentSlot( )
@@ -109,4 +109,5 @@ uint16_t getCircumReference()
 void setCircumreference( uint16_t circumReference  )
 {
     EEPROM.put( CIRCUM_REF_ADDRESS, circumReference ) ;
+    Serial.print(F("circumReference stored: ")) ; Serial.print( circumReference );
 }

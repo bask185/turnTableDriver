@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "io.h"
-extern void initIO(void) {
+extern void initIO(void)
+{
 	pinMode(dirPin, OUTPUT);
 	pinMode(stepPin, OUTPUT);
 	pinMode(enablePin, OUTPUT);
