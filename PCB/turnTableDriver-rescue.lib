@@ -1,0 +1,20 @@
+EESchema-LIBRARY Version 2.4
+#encoding utf-8
+#
+# DcDc-Banggood-customLibrariesBas
+#
+DEF DcDc-Banggood-customLibrariesBas DC-DC 0 40 Y Y 1 F N
+F0 "DC-DC" 0 0 50 H V C CNN
+F1 "DcDc-Banggood-customLibrariesBas" 50 100 50 H V C CNN
+F2 "" 0 0 50 H I C CNN
+F3 "" 0 0 50 H I C CNN
+DRAW
+S -350 250 500 -150 0 1 0 N
+X Vin+ 1 600 200 100 L 50 50 1 1 I
+X Vin- 2 600 -100 100 L 50 50 1 1 I
+X Vout+ 3 -450 200 100 R 50 50 1 1 I
+X Vout- 4 -450 -100 100 R 50 50 1 1 I
+ENDDRAW
+ENDDEF
+#
+#End Library
